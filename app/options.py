@@ -150,7 +150,11 @@ def scan_options(o_cfg: dict) -> dict:
             cand_exp = cand_exp[:max_exp]
             for exp_str, dte in cand_exp:
                 try:
-                    calls, puts = tkr.option_chain(exp_str)
+                    chain = tkr.option_chain(exp_str)
+                    if hasattr(chain, "calls"):
+                        calls, puts = chain.calls, chain.puts
+                    else:
+                        calls, puts = chain[0], chain[1]
                 except Exception as e:  # noqa: BLE001
                     print(f"[options] {sym} {exp_str} 链获取失败: {e}")
                     continue
