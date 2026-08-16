@@ -92,7 +92,11 @@ def verify_news(app_cfg: dict) -> dict:
             pos = idx.searchsorted(pd.Timestamp(d))
             if pos >= len(idx) - 1:
                 continue
-            move = abs(float(c.iloc[pos + 1] / c.iloc[pos] - 1))
+            # 新闻后 1~3 个交易日内最大波动（避免盘中未收盘数据低估）
+            move = max(
+                abs(float(c.iloc[pos + k] / c.iloc[pos] - 1))
+                for k in (1, 2, 3) if pos + k < len(idx)
+            )
             ratio = move / atr_pct[t]
             ratios.append(ratio)
         if not ratios:
