@@ -48,6 +48,7 @@ def verify_news(app_cfg: dict) -> dict:
         if it.get("tickers") and "impact_confirmed" not in it
         and (lambda s: True if not s else datetime.strptime(s[:10], "%Y-%m-%d").date() >= cutoff)(it.get("first_seen", ""))
     ][:60]
+    print(f"[review] 待核验新闻 {len(pending)} 条（共 {len(items)} 条，有标的 {sum(1 for it in items if it.get('tickers'))} 条）")
     if not pending:
         return {"checked": 0, "confirmed": 0, "world_class": [], "ai_accuracy": {}}
 
