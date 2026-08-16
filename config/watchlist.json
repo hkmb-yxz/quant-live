@@ -1,0 +1,4 @@
+{
+  "backtest_tickers": ["SPY","QQQ","DIA","IWM","AAPL","MSFT","NVDA","TSLA","AMZN","META","GOOGL","AMD","AVGO","JPM","XOM","GLD","TLT","XLK","XLF","SMH"],
+  "options_tickers": ["SPY","QQQ","IWM","AAPL","NVDA","TSLA","META","AMD"]
+}

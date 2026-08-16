@@ -1,0 +1,57 @@
+name: collect
+
+on:
+  schedule:
+    # 全部为 UTC 时间；北京 = UTC+8
+    - cron: '*/15 * * * *'   # 热点新闻：每 15 分钟
+    - cron: '5,35 * * * *'   # 期权扫描：每小时第 5/35 分
+    - cron: '20 * * * *'     # 回测 + 因子挖掘：每小时第 20 分
+    - cron: '30 14 * * *'    # 每日摘要邮件：北京 22:30
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '运行模式 news|scan|quant|digest|all'
+        required: false
+        default: 'all'
+
+concurrency:
+  group: collect-lock
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          QQ_SMTP_SENDER: ${{ secrets.QQ_SMTP_SENDER }}
+          QQ_SMTP_CODE: ${{ secrets.QQ_SMTP_CODE }}
+          EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+        run: python -m app.main --mode ${{ github.event.inputs.mode || 'auto' }} --allow-email
+
+      - name: Commit data
+        run: |
+          git config user.name "quant-live-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data config
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+          else
+            git commit -m "data: update $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi

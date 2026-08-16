@@ -1,0 +1,30 @@
+{
+  "site_url": "https://hkmb-yxz.github.io/quant-live/",
+  "timezone": "Asia/Shanghai",
+  "top_news_n": 20,
+  "news_feeds": [
+    {"name": "Yahoo Finance 美股", "url": "https://feeds.finance.yahoo.com/rss/2.0/headline?s=SPY,QQQ,NVDA,TSLA,AAPL&region=US&lang=en-US"},
+    {"name": "CNBC 市场", "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html"},
+    {"name": "MarketWatch", "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories"},
+    {"name": "WSJ 市场", "url": "https://feeds.a.dj.com/rss/RSSMarketsMain.xml"},
+    {"name": "Benzinga", "url": "https://www.benzinga.com/feed"}
+  ],
+  "ai": {
+    "model": "deepseek-chat",
+    "news_interval_min": 30,
+    "factor_interval_min": 60,
+    "max_output_tokens": 1200,
+    "timeout_sec": 90
+  },
+  "hot_keywords": {
+    "fed": 3, "rate cut": 4, "rate hike": 4, "fomc": 3, "inflation": 3, "cpi": 3, "ppi": 2,
+    "jobs": 2, "payroll": 3, "unemployment": 2, "gdp": 2, "recession": 4, "earnings": 3,
+    "ai": 3, "artificial intelligence": 3, "nvidia": 3, "openai": 2, "chips": 2, "semiconductor": 2,
+    "tesla": 2, "apple": 2, "microsoft": 2, "meta": 2, "amazon": 2, "google": 2,
+    "tariff": 4, "trade war": 4, "election": 2, "oil": 2, "crude": 2, "opec": 2,
+    "gold": 2, "bitcoin": 2, "crypto": 2, "rally": 2, "record high": 2, "sell-off": 3,
+    "crash": 4, "correction": 3, "downgrade": 3, "upgrade": 2, "merger": 2, "acquisition": 2,
+    "ipo": 2, "stock split": 2, "buyback": 2, "dividend": 2, "guidance": 3, "outlook": 2,
+    "china": 3, "trump": 3, "white house": 2, "treasury": 3, "yield": 2, "dollar": 2
+  }
+}

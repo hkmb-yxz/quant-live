@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>量化实时监控台 · Quant Live</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">📈</span>
+      <div>
+        <h1>量化实时监控台</h1>
+        <p class="sub">AI 热点 · 回测盈利 · 因子挖掘 · 期权形态抓捕（美股）</p>
+      </div>
+    </div>
+    <div class="top-right">
+      <span id="runBadge" class="badge badge-warn">加载中…</span>
+      <button id="refreshBtn" class="btn">⟳ 立即刷新</button>
+      <span id="countdown" class="countdown"></span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="news">🔥 热点新闻</button>
+    <button class="tab" data-tab="backtest">📊 回测分析</button>
+    <button class="tab" data-tab="factors">🧬 因子挖掘</button>
+    <button class="tab" data-tab="options">🎯 期权扫描</button>
+    <button class="tab" data-tab="status">⚙️ 运行状态</button>
+    <button class="tab" data-tab="help">❓ 使用说明</button>
+  </nav>
+
+  <main>
+    <!-- 新闻 -->
+    <section id="tab-news" class="panel active">
+      <div class="panel-head">
+        <h2>AI 实时金融热点</h2>
+        <div id="newsMeta" class="meta"></div>
+      </div>
+      <div id="newsList" class="news-list"><p class="empty">等待数据…</p></div>
+    </section>
+
+    <!-- 回测 -->
+    <section id="tab-backtest" class="panel">
+      <div class="panel-head">
+        <h2>实时回测盈利分析</h2>
+        <div class="controls">
+          <select id="btTicker" class="sel"></select>
+          <select id="btStrategy" class="sel"></select>
+        </div>
+      </div>
+      <div id="btMetrics" class="cards"></div>
+      <div class="chart-box"><canvas id="btChart"></canvas><div id="btEmpty" class="empty" hidden>等待首次运行（每小时更新）…</div></div>
+      <h3 class="sec-title">策略 × 标的 排名（按夏普）</h3>
+      <div class="table-wrap"><table id="btRankTable" class="grid"></table></div>
+    </section>
+
+    <!-- 因子 -->
+    <section id="tab-factors" class="panel">
+      <div class="panel-head">
+        <h2>实时量化因子挖掘</h2>
+        <div class="controls">
+          <label class="lbl">预测窗口
+            <select id="facHorizon" class="sel"></select>
+          </label>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="chart-box"><canvas id="facChart"></canvas></div>
+        <div id="facAi" class="ai-box"><p class="empty">暂无 AI 解读</p></div>
+      </div>
+      <h3 class="sec-title">因子 × 标的 热力图（最新一期，横截面 z 值）</h3>
+      <div class="table-wrap" id="facHeat"></div>
+    </section>
+
+    <!-- 期权 -->
+    <section id="tab-options" class="panel">
+      <div class="panel-head">
+        <h2>期权形态抓捕（胜率 / 盈亏比 / 年化期望）</h2>
+        <div id="optCond" class="meta"></div>
+      </div>
+      <div id="optStats" class="cards"></div>
+      <div class="chart-box short"><canvas id="optChart"></canvas><div id="optEmpty" class="empty" hidden>等待首次扫描（每小时第 5/35 分）…</div></div>
+      <h3 class="sec-title">本次扫描命中（新命中高亮）</h3>
+      <div class="table-wrap"><table id="optTable" class="grid"></table></div>
+      <h3 class="sec-title">历史命中（最近 200 条）</h3>
+      <div class="table-wrap"><table id="optHistTable" class="grid"></table></div>
+      <p class="disclaimer">⚠️ 以上为基于 Black-Scholes 定价 + 蒙特卡洛模拟的统计估算，不代表未来收益，不构成投资建议。</p>
+    </section>
+
+    <!-- 状态 -->
+    <section id="tab-status" class="panel">
+      <div class="panel-head"><h2>运行状态</h2><div id="statusMeta" class="meta"></div></div>
+      <div class="table-wrap"><table id="statusTable" class="grid"></table></div>
+      <h3 class="sec-title">近期错误</h3>
+      <div id="errList" class="err-list"><p class="empty">无错误</p></div>
+      <h3 class="sec-title">定时计划（北京时间）</h3>
+      <ul class="sched">
+        <li>🔥 热点新闻 + AI 解读：每 15 分钟</li>
+        <li>🎯 期权扫描 + 新命中邮件提醒：每小时第 5/35 分</li>
+        <li>📊 回测 + 🧬 因子挖掘 + AI 解读：每小时第 20 分</li>
+        <li>📧 每日摘要邮件：每天 22:30</li>
+      </ul>
+    </section>
+
+    <!-- 帮助 -->
+    <section id="tab-help" class="panel">
+      <h2>使用说明</h2>
+      <div class="help-box">
+        <h3>📌 如何调整参数？</h3>
+        <p>所有配置都在 GitHub 仓库的 <code>config/</code> 目录下，直接在网页上编辑并提交即可，几分钟内自动生效：</p>
+        <ul>
+          <li><code>config/options.json</code>：扫描标的、到期范围、形态开关、最低胜率 / 盈亏比 / 年化期望、邮件预算</li>
+          <li><code>config/watchlist.json</code>：回测与期权扫描的标的列表</li>
+          <li><code>config/backtest.json</code>：策略开关与参数（均线、RSI、动量、唐奇安）</li>
+          <li><code>config/factors.json</code>：因子库与股票池</li>
+          <li><code>config/app.json</code>：新闻源、AI 调用间隔、关键词权重</li>
+        </ul>
+        <h3>📧 邮件通知</h3>
+        <p>新形态命中会立即邮件提醒（每封最多 12 条，每天最多 4 封），另有一封每日 22:30 摘要。
+        邮箱为 QQ 邮箱 SMTP，凭证保存在 GitHub Secrets 中：<code>QQ_SMTP_SENDER</code>、<code>QQ_SMTP_CODE</code>、<code>EMAIL_RECEIVER</code>。</p>
+        <h3>🤖 AI 能力</h3>
+        <p>新闻中文摘要与情绪解读、因子 IC 结果解读均由 DeepSeek API 完成（密钥 <code>DEEPSEEK_API_KEY</code>）。
+        未配置密钥时自动降级为关键词热度规则，其他功能不受影响。AI 调用按间隔节流以控制成本。</p>
+        <h3>⚠️ 风险提示</h3>
+        <p>本系统数据来自 Yahoo Finance 等免费公开源（可能有延迟），所有胜率/盈亏比为统计估算，
+        不含交易成本与滑点，仅供研究与学习，不构成投资建议。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>quant-live · 数据源 Yahoo Finance / CNBC / WSJ 等公开 RSS · 免费托管于 GitHub Actions + Pages · 仅供研究，非投资建议</footer>
+  <script src="app.js"></script>
+</body>
+</html>

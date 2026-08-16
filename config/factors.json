@@ -1,0 +1,28 @@
+{
+  "lookback_days": 756,
+  "forward_returns": [5, 20],
+  "factors": [
+    {"id": "mom_20", "name": "20日动量"},
+    {"id": "mom_60", "name": "60日动量"},
+    {"id": "mom_250", "name": "250日动量"},
+    {"id": "rev_5", "name": "5日反转"},
+    {"id": "vol_20", "name": "20日波动率"},
+    {"id": "vol_ratio_10_60", "name": "短长波动率比"},
+    {"id": "rsi_14", "name": "RSI(14)"},
+    {"id": "macd_hist", "name": "MACD柱"},
+    {"id": "bb_pos", "name": "布林带位置"},
+    {"id": "vol_surge", "name": "量能突增"},
+    {"id": "dollar_vol", "name": "成交额(对数)"},
+    {"id": "amihud", "name": "非流动性"},
+    {"id": "gap_sma20", "name": "偏离20日均线"},
+    {"id": "skew_60", "name": "收益偏度"},
+    {"id": "maxdd_60", "name": "60日最大回撤"},
+    {"id": "beta_spy", "name": "Beta(SPY)"}
+  ],
+  "universe": [
+    "SPY","QQQ","IWM","DIA","GLD","TLT","XLK","XLF","XLE","XLV","XLI","SMH",
+    "AAPL","MSFT","NVDA","TSLA","AMZN","META","GOOGL","AMD","AVGO","BRK-B","JPM",
+    "XOM","WMT","V","MA","UNH","LLY","JNJ","PG","KO","PEP","BAC","WFC","GS",
+    "CAT","BA","DIS","INTC","MU","QCOM","TXN","ADBE","CRM","ORCL","NFLX","COST","NKE","MCD"
+  ]
+}

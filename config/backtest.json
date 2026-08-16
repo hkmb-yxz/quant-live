@@ -1,0 +1,10 @@
+{
+  "lookback_days": 504,
+  "initial_capital": 100000,
+  "strategies": [
+    {"id": "sma_cross", "name": "均线交叉", "enabled": true, "params": {"fast": 20, "slow": 50}},
+    {"id": "rsi_reversion", "name": "RSI 均值回归", "enabled": true, "params": {"period": 14, "buy": 30, "sell": 70}},
+    {"id": "momentum", "name": "动量趋势", "enabled": true, "params": {"mom_days": 20, "ma": 200}},
+    {"id": "donchian", "name": "唐奇安突破", "enabled": true, "params": {"entry": 20, "exit": 10}}
+  ]
+}
