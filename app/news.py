@@ -98,16 +98,17 @@ def fetch_news(app_cfg: dict, history: list[dict] | None = None) -> list[dict]:
     return merged[:300]
 
 
-def ai_summarize(items: list[dict], client: DeepSeekClient) -> dict | None:
+def ai_summarize(items: list[dict], client: DeepSeekClient, batch_n: int = 10) -> dict | None:
     """让 DeepSeek 批量解读前 N 条新闻，返回 {items:[...], updated_at}。"""
     if not client.available or not items:
         return None
+    items = items[:batch_n]
     titles = [f"{i+1}. {it['title']} (来源:{it['source']})" for i, it in enumerate(items)]
     system = (
         "你是资深美股市场分析师。用户给你一组英文财经新闻标题，请输出 JSON 对象，"
-        '格式为 {"items":[{"idx":序号,"title_cn":"简洁中文标题(25字内)","sentiment":"利好/利空/中性",'
-        '"impact":1到5整数(5为影响最大),"summary":"一句话中文解读(60字内)","sectors":["受影响的板块，如 科技/半导体/能源，可空数组"]}]}。'
-        "idx 必须与输入序号对应，逐条输出，不要省略任何一条。"
+        '格式为 {"items":[{"idx":序号,"title_cn":"简洁中文标题(20字内)","sentiment":"利好/利空/中性",'
+        '"impact":1到5整数(5为影响最大),"summary":"一句话中文解读(40字内)","sectors":["受影响板块，如 科技/半导体/能源，最多2个，可空数组"]}]}。'
+        "idx 必须与输入序号对应，逐条输出，不要省略。输出必须为合法 JSON，不要输出 JSON 以外的任何内容。"
     )
     user = "\n".join(titles)
     data = client.chat_json(system, user, expect_keys={"items"})
@@ -141,7 +142,8 @@ def run_news(app_cfg: dict, client: DeepSeekClient, force_ai: bool = False) -> d
     interval = int(app_cfg.get("ai", {}).get("news_interval_min", 30))
     due = utils.minutes_ago(last_ai) is None or utils.minutes_ago(last_ai) >= interval
     if (force_ai or due) and client.available:
-        res = ai_summarize(top, client)
+        batch_n = int(app_cfg.get("ai", {}).get("news_batch_n", 10))
+        res = ai_summarize(top, client, batch_n=batch_n)
         if res:
             prev["ai_updated_at"] = res["updated_at"]
             ai_done = True
