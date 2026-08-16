@@ -54,5 +54,12 @@ jobs:
             echo "no changes to commit"
           else
             git commit -m "data: update $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            git push
+            for i in 1 2 3 4 5; do
+              if git pull --rebase origin main && git push; then
+                echo "pushed ok"
+                break
+              fi
+              echo "push failed, retrying ($i)"
+              sleep 5
+            done
           fi
