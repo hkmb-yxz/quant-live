@@ -93,11 +93,12 @@ def mode_review(app_cfg):
 
 
 def pick_mode(now) -> str:
-    """按北京时间分钟数对应定时计划（摘要窗口留 5 分钟余量防调度延迟）。"""
+    """按北京时间分钟数对应定时计划。窗口放宽以容忍 GitHub 调度延迟；
+    复盘/摘要邮件各自有"每日一次"防重，重复触发无害。"""
     h, m = now.hour, now.minute
-    if h == 23 and m <= 10:
+    if h == 23 and m <= 45:
         return "review"
-    if h == 22 and 25 <= m <= 35:
+    if h == 22 and 20 <= m <= 55:
         return "digest"
     if m in (5, 35):
         return "scan"

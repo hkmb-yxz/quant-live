@@ -108,9 +108,13 @@ def send_hits_alert(hits: list[dict], o_cfg: dict, site_url: str = "") -> tuple[
 
 
 def send_review(review: dict, app_cfg: dict) -> tuple[bool, str]:
-    """每日复盘报告邮件。"""
+    """每日复盘报告邮件（每天只发一次）。"""
     if not available():
         return False, "未配置 SMTP"
+    st = utils.load_json(STATE_FILE, default={})
+    today = utils.bj_date_str()
+    if st.get("review_date") == today:
+        return False, f"今日复盘邮件已发送（{today}）"
     site = app_cfg.get("site_url", "")
     news = review.get("news", {})
     opts = review.get("options", {})
@@ -145,6 +149,9 @@ def send_review(review: dict, app_cfg: dict) -> tuple[bool, str]:
     ok, err = _send(f"【量化监控】每日复盘报告 {utils.bj_date_str()}", body)
     if ok:
         _mark_sent()
+        st = utils.load_json(STATE_FILE, default={})
+        st["review_date"] = utils.bj_date_str()
+        utils.save_json(STATE_FILE, st)
     return ok, err
 
 
