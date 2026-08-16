@@ -12,12 +12,12 @@
   "mc_paths": 2000,
   "sleep_between_chains": 1.2,
   "strategies": {
-    "csp": {"enabled": true,  "name": "现金担保卖沽 CSP", "delta_min": 0.15, "delta_max": 0.45},
-    "cc":  {"enabled": true,  "name": "备兑看涨 CC",     "delta_min": 0.15, "delta_max": 0.45},
-    "bps": {"enabled": true,  "name": "牛市看跌价差 BPS", "delta_min": 0.20, "delta_max": 0.40, "width_max": 10},
-    "ic":  {"enabled": false, "name": "铁鹰价差 IC",     "delta_min": 0.12, "delta_max": 0.25, "width_max": 10},
-    "lc":  {"enabled": false, "name": "买入看涨 Long Call", "delta_min": 0.30, "delta_max": 0.60},
-    "lp":  {"enabled": false, "name": "买入看跌 Long Put",  "delta_min": 0.30, "delta_max": 0.60}
+    "csp": {"enabled": true,  "name": "现金担保卖沽 CSP", "delta_min": 0.15, "delta_max": 0.45, "bias": 0},
+    "cc":  {"enabled": true,  "name": "备兑看涨 CC",     "delta_min": 0.15, "delta_max": 0.45, "bias": 0},
+    "bps": {"enabled": true,  "name": "牛市看跌价差 BPS", "delta_min": 0.20, "delta_max": 0.40, "width_max": 10, "bias": 1},
+    "ic":  {"enabled": false, "name": "铁鹰价差 IC",     "delta_min": 0.12, "delta_max": 0.25, "width_max": 10, "bias": 0},
+    "lc":  {"enabled": false, "name": "买入看涨 Long Call", "delta_min": 0.30, "delta_max": 0.60, "bias": 1},
+    "lp":  {"enabled": false, "name": "买入看跌 Long Put",  "delta_min": 0.30, "delta_max": 0.60, "bias": -1}
   },
   "conditions": {
     "min_win_rate": 0.55,
@@ -32,8 +32,15 @@
       "lp":  {"min_win_rate": 0.25, "min_pl_ratio": 2.0,  "min_ann_return": 0.0}
     }
   },
+  "resonance": {
+    "enabled": true,
+    "min_resonance": 60,
+    "news_window_hours": 48,
+    "weights": {"news": 0.35, "cycle": 0.20, "technical": 0.25, "capital": 0.20}
+  },
   "alert": {
     "max_emails_per_day": 4,
-    "max_hits_per_email": 12
+    "max_hits_per_email": 12,
+    "resonance_only": true
   }
 }

@@ -4,7 +4,7 @@ import argparse
 import os
 import traceback
 
-from . import backtest, factors, news, notifier, options, utils
+from . import backtest, factors, news, notifier, options, review, utils
 from .ai import DeepSeekClient
 
 STATUS_FILE = utils.DATA_DIR + "/status.json"
@@ -78,9 +78,25 @@ def mode_digest(app_cfg):
         return {"ok": False, "error": str(e)}
 
 
+def mode_review(app_cfg):
+    try:
+        r = review.run_review(app_cfg)
+        r["email"] = ""
+        ok, err = notifier.send_review(r, app_cfg)
+        r["email"] = "sent" if ok else f"skip:{err}"
+        _update_status("review", r)
+        return r
+    except Exception as e:  # noqa: BLE001
+        _update_status("review", {"ok": False, "error": f"{e}"})
+        traceback.print_exc()
+        return {"ok": False, "error": str(e)}
+
+
 def pick_mode(now) -> str:
     """按北京时间分钟数对应定时计划（摘要窗口留 5 分钟余量防调度延迟）。"""
     h, m = now.hour, now.minute
+    if h == 23 and m <= 10:
+        return "review"
     if h == 22 and 25 <= m <= 35:
         return "digest"
     if m in (5, 35):
@@ -92,7 +108,7 @@ def pick_mode(now) -> str:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", default="auto", choices=["auto", "news", "scan", "quant", "digest", "all"])
+    ap.add_argument("--mode", default="auto", choices=["auto", "news", "scan", "quant", "digest", "review", "all"])
     ap.add_argument("--allow-email", action="store_true", help="允许发送邮件（Actions 中自动开启）")
     ap.add_argument("--no-ai", action="store_true", help="禁用 AI 调用")
     ap.add_argument("--force-ai", action="store_true", help="忽略时间间隔强制调用 AI")
@@ -125,6 +141,8 @@ def main():
                                       load_cfg("watchlist"), client, app_cfg, force_ai=args.force_ai)
     if mode in ("digest", "all"):
         results["digest"] = mode_digest(app_cfg)
+    if mode in ("review", "all"):
+        results["review"] = mode_review(app_cfg)
 
     print(f"== quant-live 完成 {results} ==")
     return 0

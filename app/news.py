@@ -59,10 +59,23 @@ def _dedupe(items: list[dict]) -> list[dict]:
     return out
 
 
+def _extract_tickers(title: str, ticker_map: dict) -> list[str]:
+    """从标题中按关键词映射提取涉及的标的（去重，最多 5 个）。"""
+    low = title.lower()
+    found = []
+    for kw, tkr in ticker_map.items():
+        if kw in low and tkr not in found:
+            found.append(tkr)
+        if len(found) >= 5:
+            break
+    return found
+
+
 def fetch_news(app_cfg: dict, history: list[dict] | None = None) -> list[dict]:
     """抓取全部 RSS 源，打分去重，与历史合并（同标题保留首次时间）。"""
     history = history or []
     known = {it.get("key", "") for it in history}
+    ticker_map = app_cfg.get("ticker_map", {})
     fresh = []
     for feed in app_cfg.get("news_feeds", []):
         try:
@@ -82,6 +95,7 @@ def fetch_news(app_cfg: dict, history: list[dict] | None = None) -> list[dict]:
                     "source": feed["name"],
                     "published": p["published"],
                     "keywords": kws,
+                    "tickers": _extract_tickers(p["title"], ticker_map),
                     "score": round(score, 1),
                     "first_seen": utils.bj_now_str() if key not in known else next(
                         (h.get("first_seen") for h in history if h.get("key") == key),

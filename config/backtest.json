@@ -1,6 +1,37 @@
 {
   "lookback_days": 504,
   "initial_capital": 100000,
+  "targets": {
+    "min_win_rate": 0.60,
+    "min_pl_ratio": 2.0,
+    "min_sharpe": 2.0
+  },
+  "walk_forward": {
+    "oos_ratio": 0.30,
+    "grid": {
+      "sma_cross": [
+        {"fast": 10, "slow": 30},
+        {"fast": 20, "slow": 50},
+        {"fast": 50, "slow": 200},
+        {"fast": 10, "slow": 20}
+      ],
+      "rsi_reversion": [
+        {"period": 2, "buy": 10, "sell": 90},
+        {"period": 14, "buy": 30, "sell": 70},
+        {"period": 7, "buy": 20, "sell": 80}
+      ],
+      "momentum": [
+        {"mom_days": 10, "ma": 100},
+        {"mom_days": 20, "ma": 200},
+        {"mom_days": 60, "ma": 150}
+      ],
+      "donchian": [
+        {"entry": 20, "exit": 10},
+        {"entry": 55, "exit": 20},
+        {"entry": 10, "exit": 5}
+      ]
+    }
+  },
   "strategies": [
     {"id": "sma_cross", "name": "均线交叉", "enabled": true, "params": {"fast": 20, "slow": 50}},
     {"id": "rsi_reversion", "name": "RSI 均值回归", "enabled": true, "params": {"period": 14, "buy": 30, "sell": 70}},

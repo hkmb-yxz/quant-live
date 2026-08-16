@@ -59,6 +59,8 @@ def _mark_sent():
 
 
 def fmt_pct(x) -> str:
+    if x is None:
+        return "—"
     return f"{x*100:.1f}%"
 
 
@@ -100,6 +102,47 @@ def send_hits_alert(hits: list[dict], o_cfg: dict, site_url: str = "") -> tuple[
     <p style="color:#888;font-size:12px">本邮件由 quant-live 自动发送。参数可在 config/options.json 调整。</p>
     """
     ok, err = _send(f"【量化监控】期权形态新命中 {len(hits)} 条", body)
+    if ok:
+        _mark_sent()
+    return ok, err
+
+
+def send_review(review: dict, app_cfg: dict) -> tuple[bool, str]:
+    """每日复盘报告邮件。"""
+    if not available():
+        return False, "未配置 SMTP"
+    site = app_cfg.get("site_url", "")
+    news = review.get("news", {})
+    opts = review.get("options", {})
+    tune = review.get("tune", {})
+    stats = opts.get("stats", {})
+    wc_rows = "".join(
+        f"<li>{it.get('title','')[:80]} → {','.join(it.get('tickers', []))}，"
+        f"波动为平均日波动的 <b>{it.get('atr_ratio')}×</b></li>"
+        for it in news.get("world_class", [])[:8]
+    ) or "<li>今日无世界级热点</li>"
+    acc = news.get("ai_accuracy", {})
+    acc_txt = ""
+    if acc.get("high_impact", {}).get("n"):
+        acc_txt = (f"AI 高影响(≥4分)新闻实际波动确认率 <b>{fmt_pct(acc['high_impact'].get('confirmed_rate'))}</b>"
+                   f"（{acc['high_impact']['n']} 条），其余 {fmt_pct(acc.get('others', {}).get('confirmed_rate') or 0)}")
+    tune_rows = "".join(f"<li>{a}</li>" for a in tune.get("actions", [])) or "<li>无调整（样本不足或表现达标）</li>"
+    body = f"""
+    <h3>🔁 每日复盘报告（{utils.bj_now_str()}）</h3>
+    <h4>🌍 新闻波动验证</h4>
+    <p>已核验 <b>{news.get('checked', 0)}</b> 条热点：{news.get('confirmed', 0)} 条实际波动超过标的平均日波动
+    （确认率 {fmt_pct(news.get('confirmed_rate'))}）。{acc_txt}</p>
+    <h4>世界级热点（实际波动 ≥ 1.5× 平均日波动且热度≥4）</h4>
+    <ol>{wc_rows}</ol>
+    <h4>🎯 期权命中实际战绩</h4>
+    <p>累计结算 <b>{stats.get('settled_total', 0)}</b> 笔：实际胜率 <b>{fmt_pct(stats.get('actual_win_rate'))}</b>，
+    平均单笔收益 <b>{fmt_pct(stats.get('avg_actual_return'))}</b>；
+    共振高分(≥60)命中胜率 <b>{fmt_pct(stats.get('resonance_win_rate'))}</b></p>
+    <h4>⚙️ 自动调参</h4><ul>{tune_rows}</ul>
+    <p>完整面板：<a href="{site}">{site}</a></p>
+    <p style="color:#888;font-size:12px">复盘由 quant-live 每日 23:00 自动运行。数据基于历史统计，不构成投资建议。</p>
+    """
+    ok, err = _send(f"【量化监控】每日复盘报告 {utils.bj_date_str()}", body)
     if ok:
         _mark_sent()
     return ok, err

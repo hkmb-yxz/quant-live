@@ -157,19 +157,49 @@ def run_factors(f_cfg: dict, client: DeepSeekClient, force_ai: bool = False,
         stats.sort(key=lambda x: abs(x.get("icir", 0)), reverse=True)
         stats_by_h[str(fwd)] = stats
 
-    # 最新一期热力图：top5 因子 × |zscore| 最大 10 只
+    # 最新一期：全部因子 z 值 + ICIR 加权综合评分榜 + top5 热力图
     last_d = weekly[-1]
-    top5 = [s["id"] for s in stats_by_h[str(horizons[0])][:5]]
-    zs = {}
-    for fid in top5:
+    zs_all = {}
+    for fid in factor_ids:
         vals = pd.Series({t: panels[t][fid].get(last_d, np.nan) for t in panels}).dropna()
+        if len(vals) < 5:
+            continue
         z = (vals - vals.mean()) / (vals.std() + 1e-9)
-        zs[fid] = z
-    heat_tickers = sorted(panels, key=lambda t: max(abs(zs[f].get(t, 0)) for f in top5), reverse=True)[:10]
+        zs_all[fid] = z
+
+    valid_stats = [s for s in stats_by_h[str(horizons[0])]
+                   if s.get("icir") is not None and s.get("mean_ic") is not None and s["id"] in zs_all]
+    denom = sum(abs(s["icir"]) for s in valid_stats) or 1.0
+    weights = {s["id"]: round(s["icir"] / denom, 4) for s in valid_stats}
+
+    comp = pd.Series(0.0, index=list(panels.keys()))
+    contrib = {t: [] for t in panels}
+    for fid, w in weights.items():
+        z = zs_all[fid].reindex(comp.index).fillna(0.0)
+        comp = comp + w * z
+        for t in panels:
+            c = float(w * z.get(t, 0.0))
+            if abs(c) > 1e-6:
+                contrib[t].append({"factor": names.get(fid, fid), "contribution": round(c, 3)})
+    comp_rank = comp.sort_values(ascending=False)
+    composite = {
+        "weights": weights,
+        "ranking": [
+            {
+                "ticker": t, "score": round(float(comp[t]), 3),
+                "top_factors": sorted(contrib[t], key=lambda x: -abs(x["contribution"]))[:3],
+            }
+            for t in comp_rank.index[:20]
+        ],
+        "as_of": last_d.strftime("%Y-%m-%d"),
+    }
+
+    top5 = [s["id"] for s in valid_stats[:5]]
+    heat_tickers = sorted(panels, key=lambda t: max(abs(zs_all[f].get(t, 0)) for f in top5), reverse=True)[:10]
     heatmap = {
         "factors": [names.get(f, f) for f in top5],
         "tickers": heat_tickers,
-        "values": [[round(float(zs[f].get(t, 0)), 2) for f in top5] for t in heat_tickers],
+        "values": [[round(float(zs_all[f].get(t, 0)), 2) for f in top5] for t in heat_tickers],
         "as_of": last_d.strftime("%Y-%m-%d"),
     }
 
@@ -199,6 +229,7 @@ def run_factors(f_cfg: dict, client: DeepSeekClient, force_ai: bool = False,
         "horizons": stats_by_h,
         "top_factors": stats_by_h[str(horizons[0])],
         "heatmap": heatmap,
+        "composite": composite,
         "ai_comment": ai_comment,
     }
     ok = utils.save_json(FILE, out)
