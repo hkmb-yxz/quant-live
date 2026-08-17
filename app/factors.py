@@ -195,23 +195,27 @@ def run_factors(f_cfg: dict, client: DeepSeekClient, force_ai: bool = False,
     }
 
     top5 = [s["id"] for s in valid_stats[:5]]
-    heat_tickers = sorted(panels, key=lambda t: max(abs(zs_all[f].get(t, 0)) for f in top5), reverse=True)[:10]
-    heatmap = {
-        "factors": [names.get(f, f) for f in top5],
-        "tickers": heat_tickers,
-        "values": [[round(float(zs_all[f].get(t, 0)), 2) for f in top5] for t in heat_tickers],
-        "as_of": last_d.strftime("%Y-%m-%d"),
-    }
+    if top5:
+        heat_tickers = sorted(panels, key=lambda t: max(abs(zs_all[f].get(t, 0)) for f in top5), reverse=True)[:10]
+        heatmap = {
+            "factors": [names.get(f, f) for f in top5],
+            "tickers": heat_tickers,
+            "values": [[round(float(zs_all[f].get(t, 0)), 2) for f in top5] for t in heat_tickers],
+            "as_of": last_d.strftime("%Y-%m-%d"),
+        }
+    else:
+        heat_tickers = []
+        heatmap = {"factors": [], "tickers": [], "values": [], "as_of": last_d.strftime("%Y-%m-%d")}
 
     prev = utils.load_json(FILE, default={})
     ai_due = utils.minutes_ago(prev.get("ai_comment", {}).get("updated_at")) is None or \
         utils.minutes_ago(prev.get("ai_comment", {}).get("updated_at")) >= ai_interval_min
     ai_comment = prev.get("ai_comment", {})
-    if (force_ai or ai_due) and client.available and stats_by_h.get(str(horizons[0])):
-        top3 = stats_by_h[str(horizons[0])][:3]
+    if (force_ai or ai_due) and client.available and valid_stats:
+        top3 = valid_stats[:3]
         payload = {
             "top_factors": top3,
-            "heatmap_tickers": heat_tickers,
+            "heatmap_tickers": heat_tickers[:10] if heat_tickers else list(panels.keys())[:10],
         }
         system = (
             "你是量化研究员。根据因子 IC 检验结果（mean_ic、icir、tstat、hit_rate 为横截面 RankIC 统计）"
