@@ -93,17 +93,31 @@ def mode_review(app_cfg):
 
 
 def pick_mode(now) -> str:
-    """按北京时间分钟数对应定时计划。窗口放宽以容忍 GitHub 调度延迟；
-    复盘/摘要邮件各自有"每日一次"防重，重复触发无害。"""
-    h, m = now.hour, now.minute
-    if h == 23 and m <= 45:
+    """按"最久未运行"自动补课调度：不依赖 GitHub cron 的准点率。
+    每次触发先检查哪个模式最欠运行，优先补跑，否则跑新闻。"""
+    st = utils.load_json(STATUS_FILE, default={"last_runs": {}})
+    runs = st.get("last_runs", {})
+
+    def overdue_min(key: str) -> float:
+        at = runs.get(key, {}).get("at")
+        ma = utils.minutes_ago(at)
+        return ma if ma is not None else 1e9
+
+    email_state = utils.load_json(utils.DATA_DIR + "/email_state.json", default={})
+    today = utils.bj_date_str()
+    h = now.hour
+    # 每日复盘：23 点后且 20 小时内未跑
+    if h >= 23 and overdue_min("review") >= 20 * 60:
         return "review"
-    if h == 22 and 20 <= m <= 55:
+    # 每日摘要：22 点后且今天尚未发出
+    if h >= 22 and email_state.get("digest_date") != today:
         return "digest"
-    if m in (5, 35):
-        return "scan"
-    if m == 20:
+    # 回测+因子：超过 70 分钟未跑
+    if overdue_min("quant") >= 70:
         return "quant"
+    # 期权扫描：超过 35 分钟未跑
+    if overdue_min("scan") >= 35:
+        return "scan"
     return "news"
 
 
